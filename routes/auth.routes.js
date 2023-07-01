@@ -61,18 +61,18 @@ router.post('/signin', (req, res, next) => {
     })
     .then((user) => {
       if (!user) {
-        return res.status(401).json({
-          message: 'Authentication failed',
-        })
+        // return res.status(401).json({
+        //   message: 'Authentication failed',
+        // })
       }
       getUser = user
       return bcrypt.compare(req.body.password, user.password)
     })
     .then((response) => {
       if (!response) {
-        return res.status(401).json({
-          message: 'Authentication failed',
-        })
+        // return res.status(401).json({
+        //   message: 'Authentication failed',
+        // })
       }
       let jwtToken = jwt.sign(
         {
