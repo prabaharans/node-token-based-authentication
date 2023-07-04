@@ -20,6 +20,7 @@ router.post(
       .not()
       .isEmpty()
       .isLength({ min: 5, max: 8 }),
+    check('userType', 'User Type is required').not().isEmpty(),
   ],
   (req, res, next) => {
     const errors = validationResult(req)
@@ -33,6 +34,7 @@ router.post(
           name: req.body.name,
           email: req.body.email,
           password: hash,
+          user_type: req.body.userType,
         })
         user
           .save()
@@ -84,10 +86,17 @@ router.post('/signin', (req, res, next) => {
           expiresIn: '1h',
         },
       )
+
+      if (req.body.remember == true) {
+        console.log("remember me, save cookie");
+
+        res.cookie("cookieToken", token, { maxAge: 900000 }); //expires after 900000 ms = 15 minutes
+      }
       res.status(200).json({
         token: jwtToken,
         expiresIn: 3600,
         _id: getUser._id,
+        message: 'LoggedIn successfully',
       })
     })
     .catch((err) => {
