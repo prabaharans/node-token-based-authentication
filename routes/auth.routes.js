@@ -90,7 +90,7 @@ router.post('/signin', (req, res, next) => {
       if (req.body.remember == true) {
         console.log("remember me, save cookie");
 
-        res.cookie("cookieToken", token, { maxAge: 900000 }); //expires after 900000 ms = 15 minutes
+        res.cookie("cookieToken", jwtToken, { maxAge: 900000 }); //expires after 900000 ms = 15 minutes
       }
       res.status(200).json({
         token: jwtToken,
