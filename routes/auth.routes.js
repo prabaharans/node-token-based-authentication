@@ -63,18 +63,18 @@ router.post('/signin', (req, res, next) => {
     })
     .then((user) => {
       if (!user) {
-        // return res.status(401).json({
-        //   message: 'Authentication failed',
-        // })
+        return res.status(401).json({
+          message: 'Authentication failed',
+        })
       }
       getUser = user
       return bcrypt.compare(req.body.password, user.password)
     })
     .then((response) => {
       if (!response) {
-        // return res.status(401).json({
-        //   message: 'Authentication failed',
-        // })
+        return res.status(401).json({
+          message: 'Authentication failed',
+        })
       }
       let jwtToken = jwt.sign(
         {
@@ -86,13 +86,15 @@ router.post('/signin', (req, res, next) => {
           expiresIn: '1h',
         },
       )
+      console.log(req.body.remember);
+      // if (req.body.remember == true) {
+      //   console.log("remember me, save cookie");
 
-      if (req.body.remember == true) {
-        console.log("remember me, save cookie");
-
-        res.cookie("cookieToken", jwtToken, { maxAge: 900000 }); //expires after 900000 ms = 15 minutes
-      }
+      //   res.cookie("cookieToken", jwtToken, { maxAge: 900000 }); //expires after 900000 ms = 15 minutes
+      //   res.cookie("cookieId", getUser._id, { maxAge: 900000 }); //expires after 900000 ms = 15 minutes
+      // }
       res.status(200).json({
+        remember: req.body.remember,
         token: jwtToken,
         expiresIn: 3600,
         _id: getUser._id,
@@ -100,9 +102,11 @@ router.post('/signin', (req, res, next) => {
       })
     })
     .catch((err) => {
-      return res.status(401).json({
-        message: 'Authentication failed',
-      })
+      if(res.headersSent !== true) {
+        return res.status(401).json({
+          message: 'Authentication failed',
+        })
+      }
     })
 })
 
