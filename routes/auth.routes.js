@@ -1,10 +1,18 @@
 const express = require('express')
 const jwt = require('jsonwebtoken')
 const bcrypt = require('bcrypt')
+const Token = require("../models/Token");
+const sendEmail = require("../utils/email/sendEmail");
+const crypto = require("crypto");
 const router = express.Router()
 const userSchema = require('../models/User')
 const authorize = require('../middlewares/auth')
 const { check, validationResult } = require('express-validator')
+require('dotenv').config();
+
+const JWTSecret = process.env.JWT_SECRET;
+const bcryptSalt = process.env.BCRYPT_SALT;
+const clientURL = process.env.CLIENT_URL;
 
 // Sign-up
 router.post(
@@ -166,4 +174,40 @@ router.route('/delete-user/:id').delete((req, res, next) => {
   })
 })
 
+// forgot-password
+router.post('/forgot-password', (req, res, next) => {
+  console.log("req", req);
+  userSchema
+    .findOne({
+      email: req.body.email,
+    })
+    .then((user) => {
+      if (!user) {
+        return res.status(401).json({
+          message: 'Please enter valid email',
+        })
+      }
+      let token = Token.findOne({ userId: user._id });
+      if (token) token.deleteOne();
+      let resetToken = crypto.randomBytes(32).toString("hex");
+      const hash = bcrypt.hash(resetToken, Number(bcryptSalt));
+
+      new Token({
+        userId: user._id,
+        token: hash,
+        createdAt: Date.now(),
+      }).save();
+
+      const link = `${clientURL}/passwordReset?token=${resetToken}&id=${user._id}`;
+      sendEmail(user.email,"Password Reset Request",{name: user.name,link: link,},"./template/requestResetPassword.handlebars");
+      return link;
+    })
+    .catch((err) => {
+      if(res.headersSent !== true) {
+        return res.status(401).json({
+          message: 'Please enter valid email',
+        })
+      }
+    })
+})
 module.exports = router
