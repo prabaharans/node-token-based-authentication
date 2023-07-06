@@ -44,6 +44,7 @@ router.post(
           password: hash,
           user_type: req.body.userType,
         })
+        const token = JWT.sign({ id: user._id }, JWTSecret);
         user
           .save()
           .then((response) => {
@@ -175,24 +176,29 @@ router.route('/delete-user/:id').delete((req, res, next) => {
 })
 
 // forgot-password
-router.post('/forgot-password', (req, res, next) => {
-  console.log("req", req);
-  userSchema
+router.post('/forgot-password',
+  [
+    check('email', 'Email is required').not().isEmpty()
+  ],
+  async (req, res, next) => {
+    // console.log("req", req.body.email);
+    await userSchema
     .findOne({
       email: req.body.email,
     })
-    .then((user) => {
+    .then(async (user) => {
       if (!user) {
         return res.status(401).json({
-          message: 'Please enter valid email',
+          message: 'Please enter valid email..',
         })
       }
-      let token = Token.findOne({ userId: user._id });
+      let token = await Token.findOne({ userId: user._id });
       if (token) token.deleteOne();
       let resetToken = crypto.randomBytes(32).toString("hex");
-      const hash = bcrypt.hash(resetToken, Number(bcryptSalt));
-
-      new Token({
+      const hash = await bcrypt.hash(resetToken, Number(bcryptSalt));
+      console.log('user_id',user._id);
+      console.log('hash',hash);
+      await new Token({
         userId: user._id,
         token: hash,
         createdAt: Date.now(),
@@ -200,14 +206,19 @@ router.post('/forgot-password', (req, res, next) => {
 
       const link = `${clientURL}/passwordReset?token=${resetToken}&id=${user._id}`;
       sendEmail(user.email,"Password Reset Request",{name: user.name,link: link,},"./template/requestResetPassword.handlebars");
-      return link;
+      return res.status(200).json({
+        link: link,
+        message: 'Please check your mail, we have sent mail to you for reset password',
+      })
     })
     .catch((err) => {
       if(res.headersSent !== true) {
         return res.status(401).json({
-          message: 'Please enter valid email',
+          message: 'Please enter valid email.',
         })
       }
+      console.log(err);
+      process.exit(1);
     })
 })
 module.exports = router
