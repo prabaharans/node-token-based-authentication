@@ -204,7 +204,7 @@ router.post('/forgot-password',
         createdAt: Date.now(),
       }).save();
 
-      const link = `${clientURL}/passwordReset?token=${resetToken}&id=${user._id}`;
+      const link = `${clientURL}/password-reset/${resetToken}/${user._id}`;
       sendEmail(user.email,"Password Reset Request",{name: user.name,link: link,},"./template/requestResetPassword.handlebars");
       return res.status(200).json({
         link: link,
@@ -221,4 +221,110 @@ router.post('/forgot-password',
       process.exit(1);
     })
 })
+
+// valid-password-token
+router.post('/valid-password-token',
+  async (req, res) => {
+    if (!req.body.resettoken) {
+      return res
+      .status(500)
+      .json({ message: 'Token is required' });
+    }
+    if (!req.body.id) {
+      return res
+      .status(500)
+      .json({ message: 'Id is required' });
+    }
+    const hash = await bcrypt.hash(req.body.resettoken, Number(bcryptSalt));
+
+    const user = await Token.findOne({
+      userId: req.body.id
+    });
+    console.log('hash');
+    console.log(hash);
+    if (!user) {
+      return res
+      .status(409)
+      .json({ message: 'Invalid Id' });
+    }
+    bcrypt.compare(req.body.resettoken, user.token, function(err, result) {
+      if (result) {
+        userSchema.findOne({ _id: user.userId }).then(() => {
+          res.status(200).json({ message: 'Token verified successfully.' });
+        }).catch((err) => {
+          return res.status(500).send({ msg: err.message });
+        });
+      } else {
+        return res
+        .status(409)
+        .json({ message: 'Invalid URL' });
+      }
+    });
+  }
+)
+// new-password
+router.post('/new-password',
+  async (req, res) => {
+    if (!req.body.resettoken) {
+      return res
+      .status(500)
+      .json({ message: 'Token is required' });
+    }
+    if (!req.body.id) {
+      return res
+      .status(500)
+      .json({ message: 'Id is required' });
+    }
+    const hash = await bcrypt.hash(req.body.resettoken, Number(bcryptSalt));
+
+    const user = await Token.findOne({
+      userId: req.body.id
+    });
+    console.log('hash');
+    console.log(hash);
+    if (!user) {
+      return res
+      .status(409)
+      .json({ message: 'Invalid Id' });
+    }
+    bcrypt.compare(req.body.resettoken, user.token, function(err, result) {
+      if (!result) {
+        return res
+          .status(409)
+          .json({ message: 'Token has expired' });
+      }
+    });
+
+    userSchema.findOne({
+      _id: user.userId
+    }, function (err, userEmail, next) {
+      if (!userEmail) {
+        return res
+          .status(409)
+          .json({ message: 'User does not exist' });
+      }
+      return bcrypt.hash(req.body.newPassword, 10, (err, hash) => {
+        if (err) {
+          return res
+            .status(400)
+            .json({ message: 'Error hashing password' });
+        }
+        userEmail.password = hash;
+        userEmail.save(function (err) {
+          if (err) {
+            return res
+              .status(400)
+              .json({ message: 'Password can not reset.' });
+          } else {
+            Token.remove();
+            return res
+              .status(201)
+              .json({ message: 'Password reset successfully' });
+          }
+
+        });
+      });
+    });
+  }
+)
 module.exports = router
