@@ -44,10 +44,12 @@ router.post(
           password: hash,
           user_type: req.body.userType,
         })
-        const token = JWT.sign({ id: user._id }, JWTSecret);
+        const token = jwt.sign({ id: user._id }, JWTSecret);
         user
           .save()
           .then((response) => {
+
+            sendEmail(user.email,"Welcome Prabaharan'S family",{name: user.name},"./template/welcomeUser.handlebars");
             res.status(201).json({
               message: 'User successfully created!',
               result: response,
