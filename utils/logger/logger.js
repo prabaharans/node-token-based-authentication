@@ -28,7 +28,7 @@ const successLogger = createLogger;
 successLogger.add(new winston.transports.File({
   'name': 'access-file',
   'level': 'info',
-  'filename': './logs/'+year + "-" + month + "-" + date + "-" + hours + "-" + minutes + "-" + seconds+'-access.log',
+  'filename': './logs/'+year + "/" + month + "/" + date + "/" + hours + "/" + minutes + "/" + seconds+'/access.log',
   // 'json': false,
   // 'datePattern': 'yyyy-MM-dd-h-i-s',
   // 'prepend': true
@@ -38,7 +38,7 @@ const errorLogger = createLogger;
 errorLogger.add(new winston.transports.File({
   'name': 'error-file',
   'level': 'error',
-  'filename': './logs/'+year + "-" + month + "-" + date + "-" + hours + "-" + minutes + "-" + seconds+'-error.log',
+  'filename': './logs/'+year + "/" + month + "/" + date + "/" + hours + "/" + minutes + "/" + seconds+'/error.log',
   // 'json': false,
   // 'datePattern': 'yyyy-MM-dd--h-i-s',
   // 'prepend': true
